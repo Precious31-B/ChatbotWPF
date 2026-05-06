@@ -1,0 +1,78 @@
+﻿<Window x:Class="CyberSecurityChatbotWPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cybersecurity Awareness Chatbot" Height="600" Width="800"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E1E">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ASCII Art -->
+        <Border Grid.Row="0" Background="#2D2D2D" Margin="5" Padding="5" CornerRadius="5">
+            <TextBlock x:Name="AsciiArtBlock" 
+                       FontFamily="Consolas" 
+                       FontSize="7" 
+                       Foreground="#FF4DFF" 
+                       FontWeight="Bold"
+                       TextAlignment="Left"
+                       xml:space="preserve">
+                <TextBlock.Text>
+                    <![CDATA[
+░█▀▀░█░█░█▀▄░█▀▀░█▀▄░█▀▀░█▀▀░█▀▀░█░█░█▀▄░▀█▀░▀█▀░█░█░░░█▀█░█░█░█▀█░█▀▄░█▀▀░█▀█░█▀▀░█▀▀░█▀▀░█▀▄░█▀█░▀█▀
+░█░░░░█░░█▀▄░█▀▀░█▀▄░▀▀█░█▀▀░█░░░█░█░█▀▄░░█░░░█░░░█░░░░█▀█░█▄█░█▀█░█▀▄░█▀▀░█░█░█▀▀░▀▀█░▀▀█░█▀▄░█░█░░█░
+░▀▀▀░░▀░░▀▀░░▀▀▀░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀░▀░▀▀▀░░▀░░░▀░░░░▀░▀░▀░▀░▀░▀░▀░▀░▀▀▀░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀▀░░▀▀▀░░▀░ ]]>
+                </TextBlock.Text>
+            </TextBlock>
+        </Border>
+
+        <!-- Title -->
+        <Border Grid.Row="1" Background="#007ACC" Margin="5" Padding="10" CornerRadius="5">
+            <TextBlock Text="🛡️ CYBERSECURITY AWARENESS CHATBOT 🛡️" 
+                       FontSize="18" FontWeight="Bold" Foreground="White" 
+                       HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- Chat History Display -->
+        <Border Grid.Row="2" Background="#2D2D2D" Margin="5" Padding="10" CornerRadius="5">
+            <ScrollViewer x:Name="ChatScrollViewer" VerticalScrollBarVisibility="Auto">
+                <RichTextBox x:Name="ChatHistory" IsReadOnly="True" 
+                             Background="#2D2D2D" Foreground="White"
+                             FontFamily="Segoe UI" FontSize="14"
+                             BorderThickness="0">
+                    <RichTextBox.Resources>
+                        <Style TargetType="Paragraph">
+                            <Setter Property="Margin" Value="0"/>
+                        </Style>
+                    </RichTextBox.Resources>
+                </RichTextBox>
+            </ScrollViewer>
+        </Border>
+
+        <!-- User Input Area -->
+        <Border Grid.Row="3" Background="#2D2D2D" Margin="5" Padding="10" CornerRadius="5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox x:Name="UserInput" FontSize="14" Padding="10" 
+                         Background="#3D3D3D" Foreground="White"
+                         BorderThickness="0" 
+                         KeyDown="UserInput_KeyDown"/>
+
+                <Button Grid.Column="1" x:Name="SendButton" Content="Send" 
+                        Width="80" Margin="10,0,0,0" Padding="10"
+                        Background="#007ACC" Foreground="White"
+                        FontWeight="Bold" BorderThickness="0"
+                        Click="SendButton_Click"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
