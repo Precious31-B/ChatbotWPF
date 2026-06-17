@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 
@@ -10,103 +10,202 @@ namespace CyberSecurityChatbotWPF.Services
 
         public DatabaseHelper()
         {
-            string databasePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tasks.db");
-            connectionString = $"Data Source={databasePath}";
+            //MYSQL root Password
+            connectionString = "Server=localhost;Database=cybersecurity_db;Uid=root;Pwd=Tumi1#;";
             CreateTable();
+        }
+        public void AddTaskFull(string title, string description, string reminderDate)
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string sql = "INSERT INTO Tasks (Title, Description, ReminderDate) VALUES (@title, @description, @reminderDate)";
+                    using (var command = new MySqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@title", title);
+                        command.Parameters.AddWithValue("@description", description ?? "");
+                        command.Parameters.AddWithValue("@reminderDate", reminderDate ?? "");
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("AddTaskFull error: " + ex.Message);
+            }
         }
 
         private void CreateTable()
         {
-            using (var connection = new SqliteConnection(connectionString))
+            try
             {
-                connection.Open();
-                string sql = @"
-                    CREATE TABLE IF NOT EXISTS Tasks (
-                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        Title TEXT NOT NULL,
-                        Description TEXT,
-                        ReminderDate TEXT,
-                        IsCompleted INTEGER DEFAULT 0
-                    )";
-                using (var command = new SqliteCommand(sql, connection))
+                using (var connection = new MySqlConnection(connectionString))
                 {
-                    command.ExecuteNonQuery();
+                    connection.Open();
+                    string sql = @"
+                        CREATE TABLE IF NOT EXISTS Tasks (
+                            Id INT AUTO_INCREMENT PRIMARY KEY,
+                            Title VARCHAR(255) NOT NULL,
+                            Description TEXT,
+                            ReminderDate VARCHAR(50),
+                            IsCompleted BOOLEAN DEFAULT FALSE
+                        )";
+                    using (var command = new MySqlCommand(sql, connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Database error: " + ex.Message);
             }
         }
 
         public void AddTask(string title, string description, string reminderDate)
         {
-            using (var connection = new SqliteConnection(connectionString))
+            try
             {
-                connection.Open();
-                string sql = "INSERT INTO Tasks (Title, Description, ReminderDate) VALUES (@title, @description, @reminderDate)";
-                using (var command = new SqliteCommand(sql, connection))
+                using (var connection = new MySqlConnection(connectionString))
                 {
-                    command.Parameters.AddWithValue("@title", title);
-                    command.Parameters.AddWithValue("@description", description);
-                    command.Parameters.AddWithValue("@reminderDate", reminderDate ?? "");
-                    command.ExecuteNonQuery();
+                    connection.Open();
+                    string sql = "INSERT INTO Tasks (Title, Description, ReminderDate) VALUES (@title, @description, @reminderDate)";
+                    using (var command = new MySqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@title", title);
+                        command.Parameters.AddWithValue("@description", description ?? "");
+                        command.Parameters.AddWithValue("@reminderDate", reminderDate ?? "");
+                        command.ExecuteNonQuery();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("AddTask error: " + ex.Message);
             }
         }
 
         public List<TaskItem> GetAllTasks()
         {
             List<TaskItem> tasks = new List<TaskItem>();
-            using (var connection = new SqliteConnection(connectionString))
+            try
             {
-                connection.Open();
-                string sql = "SELECT * FROM Tasks ORDER BY Id DESC";
-                using (var command = new SqliteCommand(sql, connection))
+                using (var connection = new MySqlConnection(connectionString))
                 {
-                    using (var reader = command.ExecuteReader())
+                    connection.Open();
+                    string sql = "SELECT * FROM Tasks ORDER BY Id DESC";
+                    using (var command = new MySqlCommand(sql, connection))
                     {
-                        while (reader.Read())
+                        using (var reader = command.ExecuteReader())
                         {
-                            tasks.Add(new TaskItem
+                            while (reader.Read())
                             {
-                                Id = reader.GetInt32(0),
-                                Title = reader.GetString(1),
-                                Description = reader.GetString(2),
-                                ReminderDate = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                                IsCompleted = reader.GetInt32(4) == 1
-                            });
+                                TaskItem task = new TaskItem();
+                                task.Id = reader.GetInt32("Id");
+                                task.Title = reader.GetString("Title");
+                                task.Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? "" : reader.GetString("Description");
+                                task.ReminderDate = reader.IsDBNull(reader.GetOrdinal("ReminderDate")) ? "" : reader.GetString("ReminderDate");
+                                task.IsCompleted = reader.GetBoolean("IsCompleted");
+                                tasks.Add(task);
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("GetAllTasks error: " + ex.Message);
             }
             return tasks;
         }
 
         public void MarkTaskComplete(int id)
         {
-            using (var connection = new SqliteConnection(connectionString))
+            try
             {
-                connection.Open();
-                string sql = "UPDATE Tasks SET IsCompleted = 1 WHERE Id = @id";
-                using (var command = new SqliteCommand(sql, connection))
+                using (var connection = new MySqlConnection(connectionString))
                 {
-                    command.Parameters.AddWithValue("@id", id);
-                    command.ExecuteNonQuery();
+                    connection.Open();
+                    string sql = "UPDATE Tasks SET IsCompleted = TRUE WHERE Id = @id";
+                    using (var command = new MySqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@id", id);
+                        command.ExecuteNonQuery();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("MarkTaskComplete error: " + ex.Message);
             }
         }
 
         public void DeleteTask(int id)
         {
-            using (var connection = new SqliteConnection(connectionString))
+            try
             {
-                connection.Open();
-                string sql = "DELETE FROM Tasks WHERE Id = @id";
-                using (var command = new SqliteCommand(sql, connection))
+                using (var connection = new MySqlConnection(connectionString))
                 {
-                    command.Parameters.AddWithValue("@id", id);
-                    command.ExecuteNonQuery();
+                    connection.Open();
+                    string sql = "DELETE FROM Tasks WHERE Id = @id";
+                    using (var command = new MySqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@id", id);
+                        command.ExecuteNonQuery();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("DeleteTask error: " + ex.Message);
+            }
+        }
+
+        public int GetTaskCount()
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string sql = "SELECT COUNT(*) FROM Tasks";
+                    using (var command = new MySqlCommand(sql, connection))
+                    {
+                        return Convert.ToInt32(command.ExecuteScalar());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("GetTaskCount error: " + ex.Message);
+                return 0;
+            }
+        }
+
+        public void ClearAllTasks()
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string sql = "DELETE FROM Tasks";
+                    using (var command = new MySqlCommand(sql, connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("ClearAllTasks error: " + ex.Message);
             }
         }
     }
+
+
 
     public class TaskItem
     {
@@ -116,4 +215,6 @@ namespace CyberSecurityChatbotWPF.Services
         public string ReminderDate { get; set; }
         public bool IsCompleted { get; set; }
     }
+
+
 }
