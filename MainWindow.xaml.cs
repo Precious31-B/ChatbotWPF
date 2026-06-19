@@ -164,7 +164,7 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            // NLP SIMULATION FOR TASKS
+            // ========== NLP SIMULATION FOR TASKS ==========
 
             // NLP: Detect view tasks in different ways
             if (lowerMessage.Contains("show tasks") ||
@@ -187,10 +187,108 @@ namespace CyberSecurityChatbotWPF
                     {
                         string status = task.IsCompleted ? "Completed" : "Pending";
                         AppendToChat("", status + " [" + task.Id + "] " + task.Title, Brushes.White);
+                        if (!string.IsNullOrEmpty(task.Description))
+                        {
+                            AppendToChat("", "    Description: " + task.Description, Brushes.Gray);
+                        }
+                        if (!string.IsNullOrEmpty(task.ReminderDate))
+                        {
+                            AppendToChat("", "    Reminder: " + task.ReminderDate, Brushes.Gray);
+                        }
                     }
                     AppendToChat("Task Assistant", "Type 'Complete task [number]' or 'Delete task [number]' to manage tasks.", Brushes.Cyan);
                 }
                 activityLogger.AddLog("User viewed tasks via NLP");
+                return;
+            }
+
+            // NLP: Detect task with reminder (remind me to [task] in [time])
+            if (lowerMessage.Contains("remind me to") && lowerMessage.Contains(" in "))
+            {
+                string taskTitle = "";
+                string taskReminder = "";
+
+                int startIndex = lowerMessage.IndexOf("remind me to") + 12;
+                int endIndex = lowerMessage.IndexOf(" in ");
+                if (endIndex > startIndex)
+                {
+                    taskTitle = userMessage.Substring(startIndex, endIndex - startIndex).Trim();
+                    taskReminder = userMessage.Substring(endIndex + 4).Trim();
+                }
+                else
+                {
+                    taskTitle = userMessage.Substring(startIndex).Trim();
+                    taskReminder = "7 days";
+                }
+
+                if (!string.IsNullOrEmpty(taskTitle))
+                {
+                    databaseHelper.AddTaskFull(taskTitle, "", taskReminder);
+                    AppendToChat("Task Assistant", "Task added: " + taskTitle, Brushes.Cyan);
+                    AppendToChat("", "Reminder set for: " + taskReminder, Brushes.White);
+                    activityLogger.AddLog("Task added with reminder: " + taskTitle);
+                    return;
+                }
+            }
+
+            // NLP: Detect full task addition with description and reminder
+            if (lowerMessage.Contains("add task") &&
+                (lowerMessage.Contains("with description") ||
+                 lowerMessage.Contains("with reminder") ||
+                 lowerMessage.Contains("and")))
+            {
+                string taskTitle = "";
+                string taskDescription = "";
+                string taskReminder = "";
+
+                // Get title (remove "add task" prefix)
+                string titlePart = lowerMessage.Replace("add task", "").Replace("add a task", "").Trim();
+                if (!string.IsNullOrEmpty(titlePart))
+                {
+                    taskTitle = titlePart;
+                }
+
+                // Get description if present
+                if (lowerMessage.Contains("with description"))
+                {
+                    int descIndex = lowerMessage.IndexOf("with description") + 17;
+                    int reminderIndex = lowerMessage.IndexOf("with reminder");
+                    if (reminderIndex > descIndex)
+                    {
+                        taskDescription = userMessage.Substring(descIndex, reminderIndex - descIndex).Trim();
+                    }
+                    else
+                    {
+                        taskDescription = userMessage.Substring(descIndex).Trim();
+                    }
+                }
+
+                // Get reminder if present
+                if (lowerMessage.Contains("with reminder") || lowerMessage.Contains("remind"))
+                {
+                    int reminderIndex = lowerMessage.IndexOf("with reminder") + 14;
+                    if (reminderIndex < userMessage.Length)
+                    {
+                        taskReminder = userMessage.Substring(reminderIndex).Trim();
+                    }
+                    else
+                    {
+                        taskReminder = "7 days";
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(taskTitle))
+                {
+                    databaseHelper.AddTaskFull(taskTitle, taskDescription, taskReminder);
+                    AppendToChat("Task Assistant", "Task added: " + taskTitle, Brushes.Cyan);
+                    AppendToChat("", "Description: " + (string.IsNullOrEmpty(taskDescription) ? "None" : taskDescription), Brushes.White);
+                    AppendToChat("", "Reminder: " + (string.IsNullOrEmpty(taskReminder) ? "None" : taskReminder), Brushes.White);
+                    activityLogger.AddLog("Task added with full details: " + taskTitle);
+                }
+                else
+                {
+                    AppendToChat("Task Assistant", "Please specify a task title. Example: Add task: Update password with description: Change old password with reminder: 7 days", Brushes.Cyan);
+                }
                 return;
             }
 
@@ -211,7 +309,7 @@ namespace CyberSecurityChatbotWPF
                 isTaskRequest = true;
 
                 // Extract task title based on different phrases
-                if (lowerMessage.Contains("remind me to"))
+                if (lowerMessage.Contains("remind me to") && !lowerMessage.Contains(" in "))
                 {
                     int index = lowerMessage.IndexOf("remind me to") + 12;
                     extractedTask = userMessage.Substring(index).Trim();
@@ -239,7 +337,7 @@ namespace CyberSecurityChatbotWPF
 
                 if (!string.IsNullOrEmpty(extractedTask) && extractedTask.Length > 3)
                 {
-                    databaseHelper.AddTask(extractedTask, "No description", "");
+                    databaseHelper.AddTaskFull(extractedTask, "", "");
                     AppendToChat("Task Assistant", "Task added: " + extractedTask, Brushes.Cyan);
                     activityLogger.AddLog("Task added via NLP: " + extractedTask);
                     return;
@@ -300,7 +398,7 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            //  NLP SIMULATION FOR QUIZ 
+            // ========== NLP SIMULATION FOR QUIZ ==========
 
             // NLP: Detect quiz request in different ways
             if (lowerMessage.Contains("start quiz") ||
@@ -319,7 +417,7 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            //  NLP SIMULATION FOR ACTIVITY LOG 
+            // ========== NLP SIMULATION FOR ACTIVITY LOG ==========
 
             // NLP: Detect activity log request in different ways
             if (lowerMessage.Contains("activity log") ||
@@ -335,7 +433,7 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            //  NLP SIMULATION FOR CLEAR CHAT 
+            // ========== NLP SIMULATION FOR CLEAR CHAT ==========
 
             // NLP: Detect clear chat request in different ways
             if (lowerMessage.Contains("clear chat") ||
@@ -349,7 +447,7 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            // NORMAL CHAT RESPONSES 
+            // ========== NORMAL CHAT RESPONSES ==========
 
             string sentiment = sentimentAnalyser.DetectSentiment(userMessage);
             string empatheticPrefix = sentimentAnalyser.GetEmpatheticPrefix(sentiment);
@@ -429,6 +527,14 @@ namespace CyberSecurityChatbotWPF
                 {
                     string status = task.IsCompleted ? "Completed" : "Pending";
                     AppendToChat("", status + " [" + task.Id + "] " + task.Title, Brushes.White);
+                    if (!string.IsNullOrEmpty(task.Description))
+                    {
+                        AppendToChat("", "    Description: " + task.Description, Brushes.Gray);
+                    }
+                    if (!string.IsNullOrEmpty(task.ReminderDate))
+                    {
+                        AppendToChat("", "    Reminder: " + task.ReminderDate, Brushes.Gray);
+                    }
                 }
                 AppendToChat("Task Assistant", "Type 'Complete task [number]' or 'Delete task [number]' to manage tasks.", Brushes.Cyan);
             }
