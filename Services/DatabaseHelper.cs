@@ -17,7 +17,6 @@ namespace CyberSecurityChatbotWPF.Services
             string username = "prog6221_chatbot_user";
             string password = "tumi@data";
 
-            // Alwaysdata requires SSL for remote connections
             connectionString = $"Server={server};Port={port};Database={database};Uid={username};Pwd={password};SslMode=Required;";
 
             try
@@ -72,8 +71,7 @@ namespace CyberSecurityChatbotWPF.Services
                         command.Parameters.AddWithValue("@title", title);
                         command.Parameters.AddWithValue("@description", description ?? "");
                         command.Parameters.AddWithValue("@reminderDate", reminderDate ?? "");
-                        int rowsAffected = command.ExecuteNonQuery();
-                        System.Diagnostics.Debug.WriteLine("AddTask: " + rowsAffected + " rows inserted");
+                        command.ExecuteNonQuery();
                     }
                 }
             }
@@ -226,7 +224,6 @@ namespace CyberSecurityChatbotWPF.Services
 
         public void Shutdown()
         {
-            // Nothing needed for cloud database
             System.Diagnostics.Debug.WriteLine("Database shutdown");
         }
     }
@@ -240,3 +237,4 @@ namespace CyberSecurityChatbotWPF.Services
         public bool IsCompleted { get; set; }
     }
 }
+                            
