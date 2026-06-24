@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <None Update="voicegreeting.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewer</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
