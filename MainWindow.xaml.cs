@@ -164,9 +164,9 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            // ========== NLP SIMULATION FOR TASKS ==========
+            // ========== TASK NLP - ORDERED BY PRIORITY ==========
 
-            // NLP: Detect view tasks in different ways
+            // 1. View tasks
             if (lowerMessage.Contains("show tasks") ||
                 lowerMessage.Contains("view tasks") ||
                 lowerMessage.Contains("list tasks") ||
@@ -202,7 +202,7 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            // NLP: Detect task with reminder (remind me to [task] in [time])
+            // 2. Task with reminder: "remind me to [task] in [time]"
             if (lowerMessage.Contains("remind me to") && lowerMessage.Contains(" in "))
             {
                 string taskTitle = "";
@@ -231,24 +231,73 @@ namespace CyberSecurityChatbotWPF
                 }
             }
 
-            // NLP: Detect full task addition with description and reminder
-            if (lowerMessage.Contains("add task") &&
-                (lowerMessage.Contains("with description") ||
-                 lowerMessage.Contains("with reminder") ||
-                 lowerMessage.Contains("and")))
+            // 3. Simple task addition: "Add task: [title]" or "remind me to [task]"
+            if (lowerMessage.Contains("add task") ||
+                lowerMessage.Contains("create a task") ||
+                lowerMessage.Contains("create task") ||
+                lowerMessage.Contains("new task") ||
+                lowerMessage.Contains("remind me to") ||
+                lowerMessage.Contains("i need to") ||
+                lowerMessage.Contains("save this task") ||
+                lowerMessage.Contains("remember to") ||
+                lowerMessage.Contains("add a task"))
+            {
+                string extractedTask = "";
+
+                if (lowerMessage.Contains("remind me to") && !lowerMessage.Contains(" in "))
+                {
+                    int index = lowerMessage.IndexOf("remind me to") + 12;
+                    extractedTask = userMessage.Substring(index).Trim();
+                }
+                else if (lowerMessage.Contains("i need to"))
+                {
+                    int index = lowerMessage.IndexOf("i need to") + 9;
+                    extractedTask = userMessage.Substring(index).Trim();
+                }
+                else if (lowerMessage.Contains("remember to"))
+                {
+                    int index = lowerMessage.IndexOf("remember to") + 11;
+                    extractedTask = userMessage.Substring(index).Trim();
+                }
+                else if (lowerMessage.Contains("add task"))
+                {
+                    int index = lowerMessage.IndexOf("add task") + 8;
+                    extractedTask = userMessage.Substring(index).Trim();
+                    extractedTask = extractedTask.TrimStart(':', ' ');
+                }
+                else
+                {
+                    extractedTask = userMessage;
+                }
+
+                if (!string.IsNullOrEmpty(extractedTask) && extractedTask.Length > 1)
+                {
+                    databaseHelper.AddTaskFull(extractedTask, "", "");
+                    AppendToChat("Task Assistant", "Task added: " + extractedTask, Brushes.Cyan);
+                    activityLogger.AddLog("Task added via NLP: " + extractedTask);
+                    return;
+                }
+                else
+                {
+                    AppendToChat("Task Assistant", "Please specify a task. Example: Add task: Update password", Brushes.Cyan);
+                    return;
+                }
+            }
+
+            // 4. Full task with description and reminder: "Add task: [title] with description: [desc] with reminder: [time]"
+            if (lowerMessage.Contains("with description") || lowerMessage.Contains("with reminder"))
             {
                 string taskTitle = "";
                 string taskDescription = "";
                 string taskReminder = "";
 
-                // Get title (remove "add task" prefix)
+                // Extract title (everything after "add task" or "add a task")
                 string titlePart = lowerMessage.Replace("add task", "").Replace("add a task", "").Trim();
                 if (!string.IsNullOrEmpty(titlePart))
                 {
                     taskTitle = titlePart;
                 }
 
-                // Get description if present
                 if (lowerMessage.Contains("with description"))
                 {
                     int descIndex = lowerMessage.IndexOf("with description") + 17;
@@ -263,7 +312,6 @@ namespace CyberSecurityChatbotWPF
                     }
                 }
 
-                // Get reminder if present
                 if (lowerMessage.Contains("with reminder") || lowerMessage.Contains("remind"))
                 {
                     int reminderIndex = lowerMessage.IndexOf("with reminder") + 14;
@@ -292,65 +340,12 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            // NLP: Detect task addition in different ways
-            bool isTaskRequest = false;
-            string extractedTask = "";
-
-            if (lowerMessage.Contains("add task") ||
-                lowerMessage.Contains("create a task") ||
-                lowerMessage.Contains("create task") ||
-                lowerMessage.Contains("new task") ||
-                lowerMessage.Contains("remind me to") ||
-                lowerMessage.Contains("i need to") ||
-                lowerMessage.Contains("save this task") ||
-                lowerMessage.Contains("remember to") ||
-                lowerMessage.Contains("add a task"))
-            {
-                isTaskRequest = true;
-
-                // Extract task title based on different phrases
-                if (lowerMessage.Contains("remind me to") && !lowerMessage.Contains(" in "))
-                {
-                    int index = lowerMessage.IndexOf("remind me to") + 12;
-                    extractedTask = userMessage.Substring(index).Trim();
-                }
-                else if (lowerMessage.Contains("i need to"))
-                {
-                    int index = lowerMessage.IndexOf("i need to") + 9;
-                    extractedTask = userMessage.Substring(index).Trim();
-                }
-                else if (lowerMessage.Contains("remember to"))
-                {
-                    int index = lowerMessage.IndexOf("remember to") + 11;
-                    extractedTask = userMessage.Substring(index).Trim();
-                }
-                else if (lowerMessage.Contains("add task"))
-                {
-                    int index = lowerMessage.IndexOf("add task") + 8;
-                    extractedTask = userMessage.Substring(index).Trim();
-                    extractedTask = extractedTask.TrimStart(':', ' ');
-                }
-                else
-                {
-                    extractedTask = userMessage;
-                }
-
-                if (!string.IsNullOrEmpty(extractedTask) && extractedTask.Length > 3)
-                {
-                    databaseHelper.AddTaskFull(extractedTask, "", "");
-                    AppendToChat("Task Assistant", "Task added: " + extractedTask, Brushes.Cyan);
-                    activityLogger.AddLog("Task added via NLP: " + extractedTask);
-                    return;
-                }
-            }
-
-            // NLP: Detect task completion in different ways
+            // 5. Complete task
             if (lowerMessage.Contains("complete task") ||
                 lowerMessage.Contains("finish task") ||
                 lowerMessage.Contains("mark task") ||
                 lowerMessage.Contains("done task"))
             {
-                // Try to extract task number
                 string[] parts = userMessage.Split(' ');
                 int taskId = -1;
                 foreach (string part in parts)
@@ -372,7 +367,7 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            // NLP: Detect task deletion in different ways
+            // 6. Delete task
             if (lowerMessage.Contains("delete task") ||
                 lowerMessage.Contains("remove task") ||
                 lowerMessage.Contains("erase task"))
@@ -398,9 +393,8 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            // ========== NLP SIMULATION FOR QUIZ ==========
+            // ========== QUIZ NLP ==========
 
-            // NLP: Detect quiz request in different ways
             if (lowerMessage.Contains("start quiz") ||
                 lowerMessage.Contains("take quiz") ||
                 lowerMessage.Contains("play quiz") ||
@@ -417,9 +411,8 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            // ========== NLP SIMULATION FOR ACTIVITY LOG ==========
+            // ========== ACTIVITY LOG NLP ==========
 
-            // NLP: Detect activity log request in different ways
             if (lowerMessage.Contains("activity log") ||
                 lowerMessage.Contains("show log") ||
                 lowerMessage.Contains("view log") ||
@@ -433,9 +426,8 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            // ========== NLP SIMULATION FOR CLEAR CHAT ==========
+            // ========== CLEAR CHAT NLP ==========
 
-            // NLP: Detect clear chat request in different ways
             if (lowerMessage.Contains("clear chat") ||
                 lowerMessage.Contains("clear screen") ||
                 lowerMessage.Contains("clear history") ||
@@ -447,11 +439,13 @@ namespace CyberSecurityChatbotWPF
                 return;
             }
 
-            // ========== NORMAL CHAT RESPONSES ==========
+            // ========== SENTIMENT + KEYWORD RESPONSES ==========
 
+            // First detect sentiment
             string sentiment = sentimentAnalyser.DetectSentiment(userMessage);
             string empatheticPrefix = sentimentAnalyser.GetEmpatheticPrefix(sentiment);
 
+            // Then check for keywords
             var response = keywordManager.GetResponseForInput(userMessage);
 
             if (response != null)
@@ -471,8 +465,18 @@ namespace CyberSecurityChatbotWPF
             }
             else
             {
-                AppendToChat("Bot", "I am not sure I understand. You can ask about passwords, phishing, scams, or privacy. Or use the buttons above for tasks, quiz, or activity log.", Brushes.Orange);
-                activityLogger.AddLog("Bot gave default response for unrecognized input");
+                // If no keyword matched but sentiment detected, respond with empathy + general tip
+                if (sentiment != "neutral")
+                {
+                    string generalTip = "Remember to stay vigilant online. Always use strong passwords, enable 2FA, and be careful of suspicious links and emails.";
+                    AppendToChat("Bot", empatheticPrefix + generalTip, Brushes.LightGreen);
+                    activityLogger.AddLog("Bot gave empathetic response for sentiment: " + sentiment);
+                }
+                else
+                {
+                    AppendToChat("Bot", "I am not sure I understand. You can ask about passwords, phishing, scams, or privacy. Or use the buttons above for tasks, quiz, or activity log.", Brushes.Orange);
+                    activityLogger.AddLog("Bot gave default response for unrecognized input");
+                }
             }
         }
 
